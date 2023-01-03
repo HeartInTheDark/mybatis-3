@@ -12,7 +12,7 @@ MyBatis
 
 ![mybatis](http://mybatis.github.io/images/mybatis-logo.png)
 
-阅读Mybatis源码，添加中文注释
+阅读MyBatis源码，添加中文注释
 
 Essentials
 ----------
