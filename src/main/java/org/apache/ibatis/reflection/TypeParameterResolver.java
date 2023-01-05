@@ -122,6 +122,7 @@ public class TypeParameterResolver {
                 args[i] = typeArgs[i];
             }
         }
+        //封装成TypeParameterResolver中定义的ParameterizedType实现
         return new ParameterizedTypeImpl(rawType, null, args);
     }
 
