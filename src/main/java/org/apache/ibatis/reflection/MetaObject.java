@@ -28,37 +28,46 @@ import org.apache.ibatis.reflection.wrapper.ObjectWrapper;
 import org.apache.ibatis.reflection.wrapper.ObjectWrapperFactory;
 
 /**
+ * @DES 解析属性表达式
  * @author Clinton Begin
  */
 public class MetaObject {
-
-    private final Object originalObject;
-    private final ObjectWrapper objectWrapper;
-    private final ObjectFactory objectFactory;
-    private final ObjectWrapperFactory objectWrapperFactory;
-    private final ReflectorFactory reflectorFactory;
+    private final Object originalObject;//原始的JavaBean对象
+    private final ObjectWrapper objectWrapper;//objectWrapper对象中封装了originalObject
+    private final ObjectFactory objectFactory;//负责实例化originalObject的工厂对象
+    private final ObjectWrapperFactory objectWrapperFactory;//负责创建objectWrapper的工厂对象
+    private final ReflectorFactory reflectorFactory;//用于创建并缓存Reflector的工厂对象
 
     private MetaObject(Object object, ObjectFactory objectFactory, ObjectWrapperFactory objectWrapperFactory, ReflectorFactory reflectorFactory) {
+        //初始化上述字段
         this.originalObject = object;
         this.objectFactory = objectFactory;
         this.objectWrapperFactory = objectWrapperFactory;
         this.reflectorFactory = reflectorFactory;
 
-        if (object instanceof ObjectWrapper) {
+        if (object instanceof ObjectWrapper) {//若原始对象已经是ObjectWrapper对象，则直接使用
             this.objectWrapper = (ObjectWrapper) object;
         } else if (objectWrapperFactory.hasWrapperFor(object)) {
+            //若ObjectWrapperFactory能够为原始对象创建对应的ObjectWrapper对象，则优先使用ObjectWrapperFactory
+            //但是ObjectWrapperFactory的默认实现为DefaultObjectWrapperFactory.hasWrapperFor始终为false
+            //用户可以自行实现扩展
             this.objectWrapper = objectWrapperFactory.getWrapperFor(this, object);
         } else if (object instanceof Map) {
+            //若对象为Map则创建为MapWrapper对象
             this.objectWrapper = new MapWrapper(this, (Map) object);
         } else if (object instanceof Collection) {
+            //若对象为Collection，则创建CollectionWrapper对象
             this.objectWrapper = new CollectionWrapper(this, (Collection) object);
         } else {
+            //若对象为普通JavaBean对象，则创建BeanWrapper对象
             this.objectWrapper = new BeanWrapper(this, object);
         }
     }
 
+    //MetaObject的构造方法是私有的，只能通过forObject创建
     public static MetaObject forObject(Object object, ObjectFactory objectFactory, ObjectWrapperFactory objectWrapperFactory, ReflectorFactory reflectorFactory) {
         if (object == null) {
+            //若object为null，则统一返回SystemMetaObject.NULL_META_OBJECT这个标志对象
             return SystemMetaObject.NULL_META_OBJECT;
         } else {
             return new MetaObject(object, objectFactory, objectWrapperFactory, reflectorFactory);
@@ -110,16 +119,17 @@ public class MetaObject {
     }
 
     public Object getValue(String name) {
-        PropertyTokenizer prop = new PropertyTokenizer(name);
-        if (prop.hasNext()) {
+        PropertyTokenizer prop = new PropertyTokenizer(name);//解析子表达式
+        if (prop.hasNext()) {//处理子表达式
+            //根据PropertyTokenizer解析后指定的属性，创建相应的MetaObject对象
             MetaObject metaValue = metaObjectForProperty(prop.getIndexedName());
             if (metaValue == SystemMetaObject.NULL_META_OBJECT) {
                 return null;
             } else {
-                return metaValue.getValue(prop.getChildren());
+                return metaValue.getValue(prop.getChildren());//递归处理子表达式
             }
         } else {
-            return objectWrapper.get(prop);
+            return objectWrapper.get(prop);//通过ObjectWrapper获取指定的属性
         }
     }
 
@@ -142,7 +152,8 @@ public class MetaObject {
     }
 
     public MetaObject metaObjectForProperty(String name) {
-        Object value = getValue(name);
+        Object value = getValue(name);//获取指定属性
+        //创建属性对象相应的MetaObject对象
         return MetaObject.forObject(value, objectFactory, objectWrapperFactory, reflectorFactory);
     }
 
