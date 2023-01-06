@@ -24,6 +24,8 @@ import org.apache.ibatis.executor.result.ResultMapException;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 实现TypeHandler接口，继承TypeReference抽象类
+ * 实现了TypeHandler的setParameter()和getResult()方法，这两个方法非空数据的处理都交给了子类实现
  * @author Clinton Begin
  * @author Simone Tripodi
  */
@@ -42,7 +44,7 @@ public abstract class BaseTypeHandler<T> extends TypeReference<T> implements Typ
         throw new TypeException("JDBC requires that the JdbcType must be specified for all nullable parameters.");
       }
       try {
-        ps.setNull(i, jdbcType.TYPE_CODE);
+        ps.setNull(i, jdbcType.TYPE_CODE);//绑定参数为null的处理
       } catch (SQLException e) {
         throw new TypeException("Error setting null for parameter #" + i + " with JdbcType " + jdbcType + " . " +
                 "Try setting a different JdbcType for this parameter or a different jdbcTypeForNull configuration property. " +
@@ -50,6 +52,7 @@ public abstract class BaseTypeHandler<T> extends TypeReference<T> implements Typ
       }
     } else {
       try {
+        //绑定非空参数，该方法抽象方法，由子类实现
         setNonNullParameter(ps, i, parameter, jdbcType);
       } catch (Exception e) {
         throw new TypeException("Error setting non null for parameter #" + i + " with JdbcType " + jdbcType + " . " +
@@ -63,11 +66,12 @@ public abstract class BaseTypeHandler<T> extends TypeReference<T> implements Typ
   public T getResult(ResultSet rs, String columnName) throws SQLException {
     T result;
     try {
+      //抽象方法，有多个重载，由子类实现
       result = getNullableResult(rs, columnName);
     } catch (Exception e) {
       throw new ResultMapException("Error attempting to get column '" + columnName + "' from result set.  Cause: " + e, e);
     }
-    if (rs.wasNull()) {
+    if (rs.wasNull()) {//对空值进行特殊处理
       return null;
     } else {
       return result;
