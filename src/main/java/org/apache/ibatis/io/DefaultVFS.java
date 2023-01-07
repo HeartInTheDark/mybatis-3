@@ -58,16 +58,19 @@ public class DefaultVFS extends VFS {
 
       // First, try to find the URL of a JAR file containing the requested resource. If a JAR
       // file is found, then we'll list child resources by reading the JAR.
+      //如果url指向的资源在一个jar包中，则获取该jar包对应的URL 否则返回null
       URL jarUrl = findJarForResource(url);
       if (jarUrl != null) {
         is = jarUrl.openStream();
         if (log.isDebugEnabled()) {
           log.debug("Listing " + url);
         }
+        //遍历jar中的资源，并返回以path开头的资源列表
         resources = listResources(new JarInputStream(is), path);
       }
       else {
         List<String> children = new ArrayList<String>();
+        //遍历url指向的目录，将其下资源名称记录到children集合中
         try {
           if (isJar(url)) {
             // Some versions of JBoss VFS might give a JAR stream even if the resource
@@ -146,6 +149,7 @@ public class DefaultVFS extends VFS {
         }
 
         // Iterate over immediate children, adding files and recursing into directories
+        //遍历children集合，递归查找符合条件的资源名称
         for (String child : children) {
           String resourcePath = path + "/" + child;
           resources.add(resourcePath);
@@ -177,6 +181,7 @@ public class DefaultVFS extends VFS {
    */
   protected List<String> listResources(JarInputStream jar, String path) throws IOException {
     // Include the leading and trailing slash when matching names
+    //如果path不是以"/"开始和结束 则在其开始和结束位置添加"/"
     if (!path.startsWith("/")) {
       path = "/" + path;
     }
@@ -185,6 +190,7 @@ public class DefaultVFS extends VFS {
     }
 
     // Iterate over the entries and collect those that begin with the requested path
+    //遍历整个jar包  将以path开头的资源记录到resources集合中并返回
     List<String> resources = new ArrayList<String>();
     for (JarEntry entry; (entry = jar.getNextJarEntry()) != null;) {
       if (!entry.isDirectory()) {
