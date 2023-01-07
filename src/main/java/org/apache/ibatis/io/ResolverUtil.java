@@ -54,6 +54,8 @@ import org.apache.ibatis.logging.LogFactory;
  * Collection&lt;ActionBean&gt; beans = resolver.getClasses();
  * </pre>
  *
+ * 根据指定的条件查找指定包下的类
+ *
  * @author Tim Fennell
  */
 public class ResolverUtil<T> {
@@ -70,6 +72,8 @@ public class ResolverUtil<T> {
     /**
      * Will be called repeatedly with candidate classes. Must return True if a class
      * is to be included in the results, false otherwise.
+     *
+     * 参数Type是带检测的类，如果该类符合检测的条件，则matches方法返回true 否则返回false
      */
     boolean matches(Class<?> type);
   }
@@ -77,13 +81,15 @@ public class ResolverUtil<T> {
   /**
    * A Test that checks to see if each class is assignable to the provided class. Note
    * that this test will match the parent type itself if it is presented for matching.
+   *
+   * 用于检测类是否继承了指定的类或者接口
    */
   public static class IsA implements Test {
     private Class<?> parent;
 
     /** Constructs an IsA test using the supplied Class as the parent class/interface. */
     public IsA(Class<?> parentType) {
-      this.parent = parentType;
+      this.parent = parentType; //初始化patent字段
     }
 
     /** Returns true if type is assignable to the parent type supplied in the constructor. */
@@ -101,6 +107,8 @@ public class ResolverUtil<T> {
   /**
    * A Test that checks to see if each class is annotated with a specific annotation. If it
    * is, then the test returns true, otherwise false.
+   *
+   * 用于检测类是否添加了指定的注解
    */
   public static class AnnotatedWith implements Test {
     private Class<? extends Annotation> annotation;
@@ -128,6 +136,8 @@ public class ResolverUtil<T> {
   /**
    * The ClassLoader to use when looking for classes. If null then the ClassLoader returned
    * by Thread.currentThread().getContextClassLoader() will be used.
+   *
+   * 默认情况下使用的是当前线程上下文绑定的ClassLoader 可以通过setter修改
    */
   private ClassLoader classloader;
 
@@ -214,13 +224,14 @@ public class ResolverUtil<T> {
    *        classes, e.g. {@code net.sourceforge.stripes}
    */
   public ResolverUtil<T> find(Test test, String packageName) {
-    String path = getPackagePath(packageName);
+    String path = getPackagePath(packageName); //根据包名获取对应的路径
 
     try {
+      //通过VFS.getInstance().list()查找packageName包下的所有资源
       List<String> children = VFS.getInstance().list(path);
       for (String child : children) {
         if (child.endsWith(".class")) {
-          addIfMatching(test, child);
+          addIfMatching(test, child); //检测该类是否符合test条件
         }
       }
     } catch (IOException ioe) {
@@ -250,15 +261,16 @@ public class ResolverUtil<T> {
   @SuppressWarnings("unchecked")
   protected void addIfMatching(Test test, String fqn) {
     try {
+      //fqn是类的完全限定名
       String externalName = fqn.substring(0, fqn.indexOf('.')).replace('/', '.');
       ClassLoader loader = getClassLoader();
       if (log.isDebugEnabled()) {
         log.debug("Checking to see if class " + externalName + " matches criteria [" + test + "]");
       }
 
-      Class<?> type = loader.loadClass(externalName);
-      if (test.matches(type)) {
-        matches.add((Class<T>) type);
+      Class<?> type = loader.loadClass(externalName); //加载指定类
+      if (test.matches(type)) { //通过test.matches方法检条件是否满足
+        matches.add((Class<T>) type);//将满足条件的记录到matches集合中
       }
     } catch (Throwable t) {
       log.warn("Could not examine class '" + fqn + "'" + " due to a " +
