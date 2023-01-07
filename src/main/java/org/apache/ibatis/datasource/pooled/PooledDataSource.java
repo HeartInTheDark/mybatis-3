@@ -307,17 +307,20 @@ public class PooledDataSource implements DataSource {
      */
     public void forceCloseAll() {
         synchronized (state) {
+            //更新当前连接池标识
             expectedConnectionTypeCode = assembleConnectionTypeCode(dataSource.getUrl(), dataSource.getUsername(), dataSource.getPassword());
-            for (int i = state.activeConnections.size(); i > 0; i--) {
+            for (int i = state.activeConnections.size(); i > 0; i--) {//处理全部活跃连接
                 try {
+                    //从state.activeConnections获取PooledConnection对象
                     PooledConnection conn = state.activeConnections.remove(i - 1);
-                    conn.invalidate();
+                    conn.invalidate();//设置为无效
 
+                    //获取真正的数据库连接对象
                     Connection realConn = conn.getRealConnection();
-                    if (!realConn.getAutoCommit()) {
+                    if (!realConn.getAutoCommit()) {//回滚为提交的事务
                         realConn.rollback();
                     }
-                    realConn.close();
+                    realConn.close();//关闭真正的数据库连接
                 } catch (Exception e) {
                     // ignore
                 }
