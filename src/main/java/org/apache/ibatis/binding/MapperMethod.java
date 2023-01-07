@@ -54,13 +54,18 @@ public class MapperMethod {
 
     public Object execute(SqlSession sqlSession, Object[] args) {
         Object result;
-        switch (command.getType()) {
+        switch (command.getType()) {//根据SQL语句的类型调用SqlSession对应的方法
             case INSERT: {
+                //使用paramNameResolver处理args[]数组（用户传入的实参列表），将用户传入的实参与指定的参
+                // 数名称关联起来
                 Object param = method.convertArgsToSqlCommandParam(args);
+                //调用SqlSession.insert()方法，rowCountResult()方法会根据method字段中记录的方法的
+                //返回值类型对结果进行转换
                 result = rowCountResult(sqlSession.insert(command.getName(), param));
                 break;
             }
             case UPDATE: {
+                //与INSERT一致....
                 Object param = method.convertArgsToSqlCommandParam(args);
                 result = rowCountResult(sqlSession.update(command.getName(), param));
                 break;
@@ -71,16 +76,17 @@ public class MapperMethod {
                 break;
             }
             case SELECT:
+                //处理返回值为void且ResultSet通过ResultHandler处理的方法
                 if (method.returnsVoid() && method.hasResultHandler()) {
                     executeWithResultHandler(sqlSession, args);
                     result = null;
-                } else if (method.returnsMany()) {
+                } else if (method.returnsMany()) { //处理返回值为集合或者数组的方法
                     result = executeForMany(sqlSession, args);
-                } else if (method.returnsMap()) {
+                } else if (method.returnsMap()) {//处理返回值为map的方法
                     result = executeForMap(sqlSession, args);
-                } else if (method.returnsCursor()) {
+                } else if (method.returnsCursor()) {//处理返回值为Cursor的方法
                     result = executeForCursor(sqlSession, args);
-                } else {
+                } else {//处理单一对象的方法
                     Object param = method.convertArgsToSqlCommandParam(args);
                     result = sqlSession.selectOne(command.getName(), param);
                 }
@@ -101,21 +107,24 @@ public class MapperMethod {
     private Object rowCountResult(int rowCount) {
         final Object result;
         if (method.returnsVoid()) {
-            result = null;
+            result = null;//Mapper接口中对应方法的返回值为void
         } else if (Integer.class.equals(method.getReturnType()) || Integer.TYPE.equals(method.getReturnType())) {
-            result = rowCount;
+            result = rowCount;//Mapper接口中对应方法的返回值为int 或者Integer
         } else if (Long.class.equals(method.getReturnType()) || Long.TYPE.equals(method.getReturnType())) {
-            result = (long) rowCount;
+            result = (long) rowCount;//Mapper接口中对应方法的返回值为 long 或者 Long
         } else if (Boolean.class.equals(method.getReturnType()) || Boolean.TYPE.equals(method.getReturnType())) {
-            result = rowCount > 0;
-        } else {
+            result = rowCount > 0;//Mapper接口中对应方法的返回值为 boolean 或者 Boolean
+        } else {//以上都不满足 抛出异常
             throw new BindingException("Mapper method '" + command.getName() + "' has an unsupported return type: " + method.getReturnType());
         }
         return result;
     }
 
     private void executeWithResultHandler(SqlSession sqlSession, Object[] args) {
+        //获取SQL语句对应的MappedStatement对象，MappedStatement中记录了SQL的相关信息
         MappedStatement ms = sqlSession.getConfiguration().getMappedStatement(command.getName());
+
+        //当使用ResultHandler处理结果集时，必须指定ResultMap或者ResultType
         if (!StatementType.CALLABLE.equals(ms.getStatementType())
                 && void.class.equals(ms.getResultMaps().get(0).getType())) {
             throw new BindingException("method " + command.getName()
@@ -123,8 +132,10 @@ public class MapperMethod {
                     + " or a resultType attribute in XML so a ResultHandler can be used as a parameter.");
         }
         Object param = method.convertArgsToSqlCommandParam(args);
-        if (method.hasRowBounds()) {
+        if (method.hasRowBounds()) { //检测参数中是否有RowBounds类型的参数
+            //获取RowBounds对象，根据rowBoundsIndex字段指定位置，从args中查找
             RowBounds rowBounds = method.extractRowBounds(args);
+            //调用SqlSession.select()方法，执行查询，并由指定的ResultHandler处理结果对象
             sqlSession.select(command.getName(), param, rowBounds, method.extractResultHandler(args));
         } else {
             sqlSession.select(command.getName(), param, method.extractResultHandler(args));
@@ -133,14 +144,16 @@ public class MapperMethod {
 
     private <E> Object executeForMany(SqlSession sqlSession, Object[] args) {
         List<E> result;
-        Object param = method.convertArgsToSqlCommandParam(args);
-        if (method.hasRowBounds()) {
+        Object param = method.convertArgsToSqlCommandParam(args);//参数列表转换
+        if (method.hasRowBounds()) {//检测参数中是否有RowBounds类型的参数
             RowBounds rowBounds = method.extractRowBounds(args);
+            //调用SqlSession.select()方法，完成查询
             result = sqlSession.<E>selectList(command.getName(), param, rowBounds);
         } else {
             result = sqlSession.<E>selectList(command.getName(), param);
         }
         // issue #510 Collections & arrays support
+        //将结果转换为Collection集合
         if (!method.getReturnType().isAssignableFrom(result.getClass())) {
             if (method.getReturnType().isArray()) {
                 return convertToArray(result);
@@ -164,17 +177,22 @@ public class MapperMethod {
     }
 
     private <E> Object convertToDeclaredCollection(Configuration config, List<E> list) {
+        //使用了ObjectFactory，通过反射创建集合对象
         Object collection = config.getObjectFactory().create(method.getReturnType());
+        //构建MetaObject对象
         MetaObject metaObject = config.newMetaObject(collection);
+        //实际上就是调用Collection.addAll()方法
         metaObject.addAll(list);
         return collection;
     }
 
     @SuppressWarnings("unchecked")
     private <E> Object convertToArray(List<E> list) {
+        //获取数组的元素类型
         Class<?> arrayComponentType = method.getReturnType().getComponentType();
+        //创建数组对象
         Object array = Array.newInstance(arrayComponentType, list.size());
-        if (arrayComponentType.isPrimitive()) {
+        if (arrayComponentType.isPrimitive()) { //将每一项都添加到数组中
             for (int i = 0; i < list.size(); i++) {
                 Array.set(array, i, list.get(i));
             }
@@ -186,9 +204,10 @@ public class MapperMethod {
 
     private <K, V> Map<K, V> executeForMap(SqlSession sqlSession, Object[] args) {
         Map<K, V> result;
-        Object param = method.convertArgsToSqlCommandParam(args);
+        Object param = method.convertArgsToSqlCommandParam(args);//转换实参列表
         if (method.hasRowBounds()) {
             RowBounds rowBounds = method.extractRowBounds(args);
+            //调用SqlSession.select()方法，完成查询
             result = sqlSession.<K, V>selectMap(command.getName(), param, method.getMapKey(), rowBounds);
         } else {
             result = sqlSession.<K, V>selectMap(command.getName(), param, method.getMapKey());
