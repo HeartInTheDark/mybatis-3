@@ -25,12 +25,13 @@ import org.apache.ibatis.logging.Log;
  */
 public class Jdk14LoggingImpl implements Log {
 
-  private final Logger log;
+  private final Logger log; //底层封装了java.util.logging.Logger 对象
 
   public Jdk14LoggingImpl(String clazz) {
-    log = Logger.getLogger(clazz);
+    log = Logger.getLogger(clazz);//初始化java.util.logging.Logger 对象
   }
 
+  //将请求全部委托给java.util.logging.Logger对象的相应方法
   @Override
   public boolean isDebugEnabled() {
     return log.isLoggable(Level.FINE);
