@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import org.apache.ibatis.reflection.ExceptionUtil;
 
 /**
+ * 封装了真正的数据库连接对象（Connection）以及其的代理对象（jdk动态生成）
  * @author Clinton Begin
  */
 class PooledConnection implements InvocationHandler {
@@ -32,13 +33,20 @@ class PooledConnection implements InvocationHandler {
   private static final Class<?>[] IFACES = new Class<?>[] { Connection.class };
 
   private final int hashCode;
+
+  //记录当前PooledConnection对象所在的 PooledDataSource 对象，该PooledConnection是从PooledDataSource
+  //中获取的；当调用close方法时候会将PooledConnection放回该PooledDataSource中
   private final PooledDataSource dataSource;
-  private final Connection realConnection;
-  private final Connection proxyConnection;
-  private long checkoutTimestamp;
-  private long createdTimestamp;
-  private long lastUsedTimestamp;
+  private final Connection realConnection;//真正的数据库连接
+  private final Connection proxyConnection;//数据库连接的代理对象
+  private long checkoutTimestamp; //从连接池取出该连接的时间戳
+  private long createdTimestamp;//该连接创建的时间戳
+  private long lastUsedTimestamp;//该连接最后一次被使用的时间戳
+
+  //由数据库url、用户名和密码计算出来的hash值，可用于标识该连接所在的连接池
   private int connectionTypeCode;
+
+  //检测该连接是否有效，主要是为了防止程序通过close方法将连接返回给连接池后，依然通过该连接操作数据库
   private boolean valid;
 
   /*
@@ -232,6 +240,7 @@ class PooledConnection implements InvocationHandler {
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     String methodName = method.getName();
+    //如果调用了close方法，则将其重新放回连接池，而不是真正的关闭数据库连接
     if (CLOSE.hashCode() == methodName.hashCode() && CLOSE.equals(methodName)) {
       dataSource.pushConnection(this);
       return null;
@@ -240,8 +249,9 @@ class PooledConnection implements InvocationHandler {
         if (!Object.class.equals(method.getDeclaringClass())) {
           // issue #579 toString() should never fail
           // throw an SQLException instead of a Runtime
-          checkConnection();
+          checkConnection();//通过valid字段检测连接是否有效
         }
+        //调用真正的数据库连接对象的对应方法
         return method.invoke(realConnection, args);
       } catch (Throwable t) {
         throw ExceptionUtil.unwrapThrowable(t);
