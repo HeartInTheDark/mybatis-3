@@ -80,26 +80,26 @@ public class CacheKey implements Cloneable, Serializable {
 
     @Override
     public boolean equals(Object object) {
-        if (this == object) {
+        if (this == object) {//是否是同一个对象
             return true;
         }
-        if (!(object instanceof CacheKey)) {
+        if (!(object instanceof CacheKey)) { //是否类型相同
             return false;
         }
 
         final CacheKey cacheKey = (CacheKey) object;
 
-        if (hashcode != cacheKey.hashcode) {
+        if (hashcode != cacheKey.hashcode) { //比较hashcode
             return false;
         }
-        if (checksum != cacheKey.checksum) {
+        if (checksum != cacheKey.checksum) {//比较checksum
             return false;
         }
-        if (count != cacheKey.count) {
+        if (count != cacheKey.count) {//比较count
             return false;
         }
 
-        for (int i = 0; i < updateList.size(); i++) {
+        for (int i = 0; i < updateList.size(); i++) {//比较updateList中的每一项
             Object thisObject = updateList.get(i);
             Object thatObject = cacheKey.updateList.get(i);
             if (!ArrayUtil.equals(thisObject, thatObject)) {
