@@ -524,10 +524,10 @@ public class PooledDataSource implements DataSource {
      * @return True if the connection is still usable
      */
     protected boolean pingConnection(PooledConnection conn) {
-        boolean result = true;
+        boolean result = true;//记录ping操作是否成功
 
         try {
-            result = !conn.getRealConnection().isClosed();
+            result = !conn.getRealConnection().isClosed(); //检测真正的数据库连接是否已经关闭
         } catch (SQLException e) {
             if (log.isDebugEnabled()) {
                 log.debug("Connection " + conn.getRealHashCode() + " is BAD: " + e.getMessage());
@@ -536,12 +536,15 @@ public class PooledDataSource implements DataSource {
         }
 
         if (result) {
-            if (poolPingEnabled) {
+            if (poolPingEnabled) { //检测poolPingEnabled设置，是否执行测试SQL
+                //长时间（超过poolPingConnectionsNotUsedFor指定的时长）未使用的连接，才需要ping
+                //操作来检测数据库连接是否正常
                 if (poolPingConnectionsNotUsedFor >= 0 && conn.getTimeElapsedSinceLastUse() > poolPingConnectionsNotUsedFor) {
                     try {
                         if (log.isDebugEnabled()) {
                             log.debug("Testing connection " + conn.getRealHashCode() + " ...");
                         }
+                        //执行ping的jdbc操作
                         Connection realConn = conn.getRealConnection();
                         Statement statement = realConn.createStatement();
                         ResultSet rs = statement.executeQuery(poolPingQuery);
