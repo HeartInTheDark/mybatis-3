@@ -352,33 +352,36 @@ public class PooledDataSource implements DataSource {
 
     protected void pushConnection(PooledConnection conn) throws SQLException {
 
-        synchronized (state) {
+        synchronized (state) { //同步
+            //从 activeConnections 集合中移除 PooledConnection 对象
             state.activeConnections.remove(conn);
-            if (conn.isValid()) {
+            if (conn.isValid()) { //检测PooledConnection是否有效
+                //检测空闲连接数量是否达到上限，以及PooledConnection是否为该连接池的连接
                 if (state.idleConnections.size() < poolMaximumIdleConnections && conn.getConnectionTypeCode() == expectedConnectionTypeCode) {
                     state.accumulatedCheckoutTime += conn.getCheckoutTime();
                     if (!conn.getRealConnection().getAutoCommit()) {
                         conn.getRealConnection().rollback();
                     }
+                    //为返回连接创建新的PooledConnection对象
                     PooledConnection newConn = new PooledConnection(conn.getRealConnection(), this);
-                    state.idleConnections.add(newConn);
+                    state.idleConnections.add(newConn);//添加到idleConnections集合
                     newConn.setCreatedTimestamp(conn.getCreatedTimestamp());
                     newConn.setLastUsedTimestamp(conn.getLastUsedTimestamp());
-                    conn.invalidate();
+                    conn.invalidate();//将原来的连接设置为无效
                     if (log.isDebugEnabled()) {
                         log.debug("Returned connection " + newConn.getRealHashCode() + " to pool.");
                     }
-                    state.notifyAll();
-                } else {
-                    state.accumulatedCheckoutTime += conn.getCheckoutTime();
+                    state.notifyAll();//唤醒等待线程
+                } else {//空闲已达上限或者 PooledConnection 对象并不属于该连接池
+                    state.accumulatedCheckoutTime += conn.getCheckoutTime();//累计CheckoutTime时长
                     if (!conn.getRealConnection().getAutoCommit()) {
                         conn.getRealConnection().rollback();
                     }
-                    conn.getRealConnection().close();
+                    conn.getRealConnection().close();//关闭真正的数据库连接
                     if (log.isDebugEnabled()) {
                         log.debug("Closed connection " + conn.getRealHashCode() + ".");
                     }
-                    conn.invalidate();
+                    conn.invalidate();//设置为无效
                 }
             } else {
                 if (log.isDebugEnabled()) {
