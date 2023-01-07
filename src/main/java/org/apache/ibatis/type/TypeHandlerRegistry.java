@@ -240,15 +240,18 @@ public final class TypeHandlerRegistry {
     if (ParamMap.class.equals(type)) {
       return null;
     }
+    //查找（或初始化）Java类型对应的TypeHandler集合
     Map<JdbcType, TypeHandler<?>> jdbcHandlerMap = getJdbcHandlerMap(type);
     TypeHandler<?> handler = null;
     if (jdbcHandlerMap != null) {
+      // 根据JDBC类型查找TypeHandler对象
       handler = jdbcHandlerMap.get(jdbcType);
       if (handler == null) {
         handler = jdbcHandlerMap.get(null);
       }
       if (handler == null) {
         // #591
+        //如果jdbcHandlerMap只注册了一个TypeHandler，则使用此Typehandler对象
         handler = pickSoleHandler(jdbcHandlerMap);
       }
     }
@@ -257,19 +260,23 @@ public final class TypeHandlerRegistry {
   }
 
   private Map<JdbcType, TypeHandler<?>> getJdbcHandlerMap(Type type) {
+    //查找Java类型对应的TypeHandler集合
     Map<JdbcType, TypeHandler<?>> jdbcHandlerMap = TYPE_HANDLER_MAP.get(type);
-    if (NULL_TYPE_HANDLER_MAP.equals(jdbcHandlerMap)) {
+    if (NULL_TYPE_HANDLER_MAP.equals(jdbcHandlerMap)) { //检测是否为空集合标识
       return null;
     }
+
+    //初始化指定Java类型的TypeHandler集合
     if (jdbcHandlerMap == null && type instanceof Class) {
       Class<?> clazz = (Class<?>) type;
-      if (clazz.isEnum()) {
+      if (clazz.isEnum()) {//枚举类型的处理
         jdbcHandlerMap = getJdbcHandlerMapForEnumInterfaces(clazz, clazz);
         if (jdbcHandlerMap == null) {
           register(clazz, getInstance(clazz, defaultEnumTypeHandler));
           return TYPE_HANDLER_MAP.get(clazz);
         }
       } else {
+        //查找父类对应的TypeHandler集合，并作为初始化集合
         jdbcHandlerMap = getJdbcHandlerMapForSuperclass(clazz);
       }
     }
@@ -299,12 +306,13 @@ public final class TypeHandlerRegistry {
   private Map<JdbcType, TypeHandler<?>> getJdbcHandlerMapForSuperclass(Class<?> clazz) {
     Class<?> superclass =  clazz.getSuperclass();
     if (superclass == null || Object.class.equals(superclass)) {
-      return null;
+      return null; //父类为Object或null  查找结束
     }
     Map<JdbcType, TypeHandler<?>> jdbcHandlerMap = TYPE_HANDLER_MAP.get(superclass);
     if (jdbcHandlerMap != null) {
       return jdbcHandlerMap;
     } else {
+      //递归查找父类对应的TypeHandler集合
       return getJdbcHandlerMapForSuperclass(superclass);
     }
   }
