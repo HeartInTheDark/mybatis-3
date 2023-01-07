@@ -271,19 +271,21 @@ public class MapperMethod {
         }
     }
 
+    //封装了Mapper接口中定义方法的相关信息
     public static class MethodSignature {
 
-        private final boolean returnsMany;
-        private final boolean returnsMap;
-        private final boolean returnsVoid;
-        private final boolean returnsCursor;
-        private final Class<?> returnType;
-        private final String mapKey;
-        private final Integer resultHandlerIndex;
-        private final Integer rowBoundsIndex;
-        private final ParamNameResolver paramNameResolver;
+        private final boolean returnsMany;//返回值类型是否为Collection类型或是数组类型
+        private final boolean returnsMap;//返回值是否为Map类型
+        private final boolean returnsVoid;//返回值是否为void
+        private final boolean returnsCursor;//返回值是否为Cursor类型
+        private final Class<?> returnType;//返回值类型
+        private final String mapKey;//返回值类型是map，则该字段记录了作为key的列名
+        private final Integer resultHandlerIndex;//用来标记该方法参数列表中resultHandler位置
+        private final Integer rowBoundsIndex;//用来标记该方法参数列表中 rowBounds位置
+        private final ParamNameResolver paramNameResolver;//该方法对应的ParamNameResolver对象
 
         public MethodSignature(Configuration configuration, Class<?> mapperInterface, Method method) {
+            //解析方法的返回值类型
             Type resolvedReturnType = TypeParameterResolver.resolveReturnType(method, mapperInterface);
             if (resolvedReturnType instanceof Class<?>) {
                 this.returnType = (Class<?>) resolvedReturnType;
@@ -292,6 +294,7 @@ public class MapperMethod {
             } else {
                 this.returnType = method.getReturnType();
             }
+            //初始化以下字段
             this.returnsVoid = void.class.equals(this.returnType);
             this.returnsMany = configuration.getObjectFactory().isCollection(this.returnType) || this.returnType.isArray();
             this.returnsCursor = Cursor.class.equals(this.returnType);
@@ -302,6 +305,7 @@ public class MapperMethod {
             this.paramNameResolver = new ParamNameResolver(configuration, method);
         }
 
+        //负责将args[]数组转换成SQL语句对应的参数列表
         public Object convertArgsToSqlCommandParam(Object[] args) {
             return paramNameResolver.getNamedParams(args);
         }
@@ -346,14 +350,15 @@ public class MapperMethod {
             return returnsCursor;
         }
 
+        //查找指定类型的参数在参数列列表中的位置
         private Integer getUniqueParamIndex(Method method, Class<?> paramType) {
             Integer index = null;
             final Class<?>[] argTypes = method.getParameterTypes();
-            for (int i = 0; i < argTypes.length; i++) {
+            for (int i = 0; i < argTypes.length; i++) {//遍历MethodSignature对应方法的参数列表
                 if (paramType.isAssignableFrom(argTypes[i])) {
-                    if (index == null) {
+                    if (index == null) {//记录paramType类型的参数在参数列表中的位置
                         index = i;
-                    } else {
+                    } else {// rowBounds和resultHandler类型的参数只能有一个
                         throw new BindingException(method.getName() + " cannot have multiple " + paramType.getSimpleName() + " parameters");
                     }
                 }
