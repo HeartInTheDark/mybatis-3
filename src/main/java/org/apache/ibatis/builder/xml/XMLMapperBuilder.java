@@ -199,11 +199,16 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private void cacheRefElement(XNode context) {
     if (context != null) {
+      //将当前Mapper配置文件的namespace与被引用的Cache所在的namespace之间的对应关系记录到
+      //Configuration.cacheRefMap集合中
       configuration.addCacheRef(builderAssistant.getCurrentNamespace(), context.getStringAttribute("namespace"));
+      //创建CacheRefResolver 对象
       CacheRefResolver cacheRefResolver = new CacheRefResolver(builderAssistant, context.getStringAttribute("namespace"));
       try {
+        //解析Cache引用  该过程主要是设置MapperBuilderAssistant中的currentCache和unresolvedCacheRef字段
         cacheRefResolver.resolveCacheRef();
       } catch (IncompleteElementException e) {
+        //解析异常  添加到IncompleteCacheRefs集合，稍后再解析
         configuration.addIncompleteCacheRef(cacheRefResolver);
       }
     }
