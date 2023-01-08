@@ -22,6 +22,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * 对参数进行命名，即可在映射文件中引用该参数名
  * @author Clinton Begin
  */
 @Documented
