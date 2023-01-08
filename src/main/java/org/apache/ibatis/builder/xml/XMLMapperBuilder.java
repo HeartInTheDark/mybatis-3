@@ -88,14 +88,19 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   public void parse() {
+    //判断是否加载过该映射文件
     if (!configuration.isResourceLoaded(resource)) {
-      configurationElement(parser.evalNode("/mapper"));
+      configurationElement(parser.evalNode("/mapper"));//处理<mapper>节点
+      //将resource添加到Configuration.loadedResource集合中保存，HashSet类型集合，其中记录
+      //了已经加载过的映射文件
       configuration.addLoadedResource(resource);
-      bindMapperForNamespace();
+      bindMapperForNamespace();//注册Mapper接口
     }
-
+    //处理configurationElement()方法中解析失败的<resultMap>节点
     parsePendingResultMaps();
+    //处理configurationElement()方法中解析失败的<cache-ref>节点
     parsePendingCacheRefs();
+    //处理configurationElement()方法中解析失败的SQL语句节点
     parsePendingStatements();
   }
 
@@ -105,16 +110,24 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private void configurationElement(XNode context) {
     try {
+      //获取<mapper>节点的namespace属性
       String namespace = context.getStringAttribute("namespace");
       if (namespace == null || namespace.equals("")) {
         throw new BuilderException("Mapper's namespace cannot be empty");
       }
+      //设置MapperBuilderAssistant的currentNamespace字段，记录当前命名空间
       builderAssistant.setCurrentNamespace(namespace);
+      //解析<cache-ref>节点
       cacheRefElement(context.evalNode("cache-ref"));
+      //解析<cache>节点
       cacheElement(context.evalNode("cache"));
+      //解析<parameterMap>节点 (已经废弃)
       parameterMapElement(context.evalNodes("/mapper/parameterMap"));
+      //解析<resultMap>节点
       resultMapElements(context.evalNodes("/mapper/resultMap"));
+      //解析<sql>节点
       sqlElement(context.evalNodes("/mapper/sql"));
+      //解析<select|insert|update|delete>节点
       buildStatementFromContext(context.evalNodes("select|insert|update|delete"));
     } catch (Exception e) {
       throw new BuilderException("Error parsing Mapper XML. The XML location is '" + resource + "'. Cause: " + e, e);
