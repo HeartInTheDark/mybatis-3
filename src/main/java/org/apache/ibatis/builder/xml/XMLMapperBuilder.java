@@ -282,34 +282,48 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private ResultMap resultMapElement(XNode resultMapNode, List<ResultMapping> additionalResultMappings) throws Exception {
     ErrorContext.instance().activity("processing " + resultMapNode.getValueBasedIdentifier());
+    //获取<resultMap>的id属性
     String id = resultMapNode.getStringAttribute("id",
         resultMapNode.getValueBasedIdentifier());
+    //获取<resultMap>的type属性，表示结果集将被映射成type指定类型的对象
     String type = resultMapNode.getStringAttribute("type",
         resultMapNode.getStringAttribute("ofType",
             resultMapNode.getStringAttribute("resultType",
                 resultMapNode.getStringAttribute("javaType"))));
+    //获取<resultMap>节点的extends属性，该属性指定了该<resultMap>节点的继承关系
     String extend = resultMapNode.getStringAttribute("extends");
+    //读取<resultMap>节点的autoMapping属性，该属性设置为true，则启动指定映射功能
+    //即指定查找与列名相同的属性名，并调用setter方法，设置为false，则需要在<resultMap>中
+    //明确注明映射关系才会调用对应的setter方法
     Boolean autoMapping = resultMapNode.getBooleanAttribute("autoMapping");
-    Class<?> typeClass = resolveClass(type);
+    Class<?> typeClass = resolveClass(type);//解析type类型
     Discriminator discriminator = null;
+    //该集合用于记录解析的结果
     List<ResultMapping> resultMappings = new ArrayList<ResultMapping>();
     resultMappings.addAll(additionalResultMappings);
+
+    //处理子节点
     List<XNode> resultChildren = resultMapNode.getChildren();
     for (XNode resultChild : resultChildren) {
       if ("constructor".equals(resultChild.getName())) {
+        //处理<constructor>节点
         processConstructorElement(resultChild, typeClass, resultMappings);
       } else if ("discriminator".equals(resultChild.getName())) {
+        //处理<discriminator>节点
         discriminator = processDiscriminatorElement(resultChild, typeClass, resultMappings);
       } else {
+        //处理<id>、<result>、<collection>等节点
         List<ResultFlag> flags = new ArrayList<ResultFlag>();
         if ("id".equals(resultChild.getName())) {
-          flags.add(ResultFlag.ID);
+          flags.add(ResultFlag.ID);//如果是id，则向flags集合中添加
         }
+        //创建ResultMapping对象，并保存到resultMappings集合中
         resultMappings.add(buildResultMappingFromContext(resultChild, typeClass, flags));
       }
     }
     ResultMapResolver resultMapResolver = new ResultMapResolver(builderAssistant, id, typeClass, extend, discriminator, resultMappings, autoMapping);
     try {
+      //创建ResultMap对象，并保存到 Configuration.resultMaps 集合中 该集合为StrictMap类型
       return resultMapResolver.resolve();
     } catch (IncompleteElementException  e) {
       configuration.addIncompleteResultMap(resultMapResolver);
@@ -387,11 +401,13 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private ResultMapping buildResultMappingFromContext(XNode context, Class<?> resultType, List<ResultFlag> flags) throws Exception {
     String property;
-    if (flags.contains(ResultFlag.CONSTRUCTOR)) {
+    if (flags.contains(ResultFlag.CONSTRUCTOR)) {//判断是否包含CONSTRUCTOR
       property = context.getStringAttribute("name");
     } else {
+      //获取带节点的property属性值
       property = context.getStringAttribute("property");
     }
+    //获取其他属性值
     String column = context.getStringAttribute("column");
     String javaType = context.getStringAttribute("javaType");
     String jdbcType = context.getStringAttribute("jdbcType");
@@ -404,10 +420,12 @@ public class XMLMapperBuilder extends BaseBuilder {
     String resultSet = context.getStringAttribute("resultSet");
     String foreignColumn = context.getStringAttribute("foreignColumn");
     boolean lazy = "lazy".equals(context.getStringAttribute("fetchType", configuration.isLazyLoadingEnabled() ? "lazy" : "eager"));
+    //解析javaType、typeHandler和jdbcType
     Class<?> javaTypeClass = resolveClass(javaType);
     @SuppressWarnings("unchecked")
     Class<? extends TypeHandler<?>> typeHandlerClass = (Class<? extends TypeHandler<?>>) resolveClass(typeHandler);
     JdbcType jdbcTypeEnum = resolveJdbcType(jdbcType);
+    //创建resultMapping对象
     return builderAssistant.buildResultMapping(resultType, property, column, javaTypeClass, jdbcTypeEnum, nestedSelect, nestedResultMap, notNullColumn, columnPrefix, typeHandlerClass, flags, resultSet, foreignColumn, lazy);
   }
   
