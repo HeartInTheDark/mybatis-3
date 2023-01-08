@@ -376,8 +376,12 @@ public class MapperBuilderAssistant extends BaseBuilder {
             String resultSet,
             String foreignColumn,
             boolean lazy) {
+        //解析<resultType>节点指定的property属性类型
         Class<?> javaTypeClass = resolveResultJavaType(resultType, property, javaType);
+        //解析<resultType>节点指定的  typeHandler 属性类型
         TypeHandler<?> typeHandlerInstance = resolveTypeHandler(javaTypeClass, typeHandler);
+
+        //解析column属性值
         List<ResultMapping> composites = parseCompositeColumnName(column);
         return new ResultMapping.Builder(configuration, property, column, javaTypeClass)
                 .jdbcType(jdbcType)
