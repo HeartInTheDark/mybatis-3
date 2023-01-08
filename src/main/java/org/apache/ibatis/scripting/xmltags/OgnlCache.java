@@ -53,7 +53,7 @@ public final class OgnlCache {
     private static Object parseExpression(String expression) throws OgnlException {
         Object node = expressionCache.get(expression);//查找缓存
         if (node == null) {
-            node = Ognl.parseExpression(expression);//解析表达式
+            node = Ognl.parseExpression(expression);//解析表达式 拓展：该方法作用为生成表达式，也可以直接写表达式
             expressionCache.put(expression, node);//将表达式的结果添加到缓存中
         }
         return node;
