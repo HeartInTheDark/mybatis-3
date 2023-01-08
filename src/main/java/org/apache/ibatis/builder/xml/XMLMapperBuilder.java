@@ -369,11 +369,14 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   private void sqlElement(List<XNode> list, String requiredDatabaseId) throws Exception {
-    for (XNode context : list) {
+    for (XNode context : list) { //遍历<sql>节点
+      //获取databasesId属性
       String databaseId = context.getStringAttribute("databaseId");
-      String id = context.getStringAttribute("id");
-      id = builderAssistant.applyCurrentNamespace(id, false);
+      String id = context.getStringAttribute("id");//获取id属性
+      id = builderAssistant.applyCurrentNamespace(id, false);//为id添加命名空间
+      //检测<sql>中databasesId与当前Configuration中记录的是否一致
       if (databaseIdMatchesCurrent(id, databaseId, requiredDatabaseId)) {
+        //记录到当前类中的sqlFragments保存，在当前类的构造函数中看到该字段指向Configuration.sqlFragments集合
         sqlFragments.put(id, context);
       }
     }
