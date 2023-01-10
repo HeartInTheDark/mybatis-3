@@ -23,6 +23,7 @@ import org.apache.ibatis.scripting.ScriptingException;
 import org.apache.ibatis.type.SimpleTypeRegistry;
 
 /**
+ * 表示包含${}的占位符的动态SQL节点
  * @author Clinton Begin
  */
 public class TextSqlNode implements SqlNode {
@@ -47,13 +48,15 @@ public class TextSqlNode implements SqlNode {
 
   @Override
   public boolean apply(DynamicContext context) {
+    //创建GenericTokenParser解析器
     GenericTokenParser parser = createParser(new BindingTokenParser(context, injectionFilter));
+    //解析后的sql拼接到DynamicContext中
     context.appendSql(parser.parse(text));
     return true;
   }
   
   private GenericTokenParser createParser(TokenHandler handler) {
-    return new GenericTokenParser("${", "}", handler);
+    return new GenericTokenParser("${", "}", handler);//解析${}占位符
   }
 
   private static class BindingTokenParser implements TokenHandler {
@@ -68,15 +71,17 @@ public class TextSqlNode implements SqlNode {
 
     @Override
     public String handleToken(String content) {
+      //获取用户提供的参数
       Object parameter = context.getBindings().get("_parameter");
       if (parameter == null) {
         context.getBindings().put("value", null);
       } else if (SimpleTypeRegistry.isSimpleType(parameter.getClass())) {
         context.getBindings().put("value", parameter);
       }
+      //通过ognl解析context的值
       Object value = OgnlCache.getValue(content, context.getBindings());
       String srtValue = (value == null ? "" : String.valueOf(value)); // issue #274 return "" instead of "null"
-      checkInjection(srtValue);
+      checkInjection(srtValue);//检测合法性
       return srtValue;
     }
 
