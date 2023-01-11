@@ -269,6 +269,7 @@ public class MapperMethod {
 
         private MappedStatement resolveMappedStatement(Class<?> mapperInterface, String methodName,
                                                        Class<?> declaringClass, Configuration configuration) {
+            //SQL语句的名称（是由接口名类全限定名）与对应的方法名组成
             String statementId = mapperInterface.getName() + "." + methodName;
             if (configuration.hasStatement(statementId)) {//检测是否有该名称的SQL语句
                 //从Configuration.mappedStatements中查找对应的MappedStatement对象
