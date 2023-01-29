@@ -75,14 +75,18 @@ public class SqlSourceBuilder extends BaseBuilder {
 
     @Override
     public String handleToken(String content) {
+      //创建一个ParameterMapping对象，添加到parameterMappings中
       parameterMappings.add(buildParameterMapping(content));
       return "?";
     }
 
+    //该方法负责解析参数属性
     private ParameterMapping buildParameterMapping(String content) {
+      //解析参数属性 形成map
       Map<String, String> propertiesMap = parseParameterMapping(content);
-      String property = propertiesMap.get("property");
+      String property = propertiesMap.get("property");//获取参数名
       Class<?> propertyType;
+      //确定参数的javaType类型
       if (metaParameters.hasGetter(property)) { // issue #448 get type from additional params
         propertyType = metaParameters.getGetterType(property);
       } else if (typeHandlerRegistry.hasTypeHandler(parameterType)) {
@@ -99,6 +103,7 @@ public class SqlSourceBuilder extends BaseBuilder {
           propertyType = Object.class;
         }
       }
+      //创建ParameterMapping的建造者，并设置ParameterMapping相关配置
       ParameterMapping.Builder builder = new ParameterMapping.Builder(configuration, property, propertyType);
       Class<?> javaType = propertyType;
       String typeHandlerAlias = null;
@@ -128,9 +133,11 @@ public class SqlSourceBuilder extends BaseBuilder {
           throw new BuilderException("An invalid property '" + name + "' was found in mapping #{" + content + "}.  Valid properties are " + parameterProperties);
         }
       }
-      if (typeHandlerAlias != null) {
+      if (typeHandlerAlias != null) {//获取TypeHandler对象
         builder.typeHandler(resolveTypeHandler(javaType, typeHandlerAlias));
       }
+      //创建ParameterMapping对象，注意，如果没有TypeHandler对象，这里会根据javaType和jdbcType从TypeHandlerRegister中
+      //获取对象的TypeHandler对象
       return builder.build();
     }
 
