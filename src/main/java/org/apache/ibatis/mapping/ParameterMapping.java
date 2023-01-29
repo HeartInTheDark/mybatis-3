@@ -24,20 +24,21 @@ import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
  * @author Clinton Begin
+ * 记录了"#{}"占位符中的参数属性
  */
 public class ParameterMapping {
 
   private Configuration configuration;
 
-  private String property;
-  private ParameterMode mode;
-  private Class<?> javaType = Object.class;
-  private JdbcType jdbcType;
-  private Integer numericScale;
-  private TypeHandler<?> typeHandler;
-  private String resultMapId;
-  private String jdbcTypeName;
-  private String expression;
+  private String property;//传进来的参数name
+  private ParameterMode mode; //传入参数还是输出参数
+  private Class<?> javaType = Object.class; //参数的Java类型
+  private JdbcType jdbcType;//参数的JDBC类型
+  private Integer numericScale;//浮点数对应的精度
+  private TypeHandler<?> typeHandler;//参数对象的TypeHandler对象
+  private String resultMapId;//参数对应的ResultMap的Id
+  private String jdbcTypeName;//参数对应的jdbcTypeName属性
+  private String expression;//目前不支持该属性
 
   private ParameterMapping() {
   }
