@@ -30,6 +30,9 @@ import org.apache.ibatis.type.JdbcType;
 
 /**
  * @author Clinton Begin
+ *
+ * 主要完成两方面操作，一方面是解析SQL语句中的"#{}"占位符中定义的属性，格式类似于"#{__frc_item_0,javaType=int,jdbcType=NUMERIC,typeHandler=MyTypeHandler}",
+ * 另一方面是将SQL语句中的"#{}"占位符替换为"?"占位符
  */
 public class SqlSourceBuilder extends BaseBuilder {
 
@@ -39,17 +42,25 @@ public class SqlSourceBuilder extends BaseBuilder {
     super(configuration);
   }
 
+  //第一个参数是经过SqlNode.apply()方法处理过的SQL语句
+  //第二个参数是用户传入的实参类型
+  //第三个参数记录了形参与实参的对象关系，其实就是经过SqlNode.apply()方法处理后的DynamicContext.bindings集合
   public SqlSource parse(String originalSql, Class<?> parameterType, Map<String, Object> additionalParameters) {
+    //创建ParameterMappingTokenHandler对象，他是解析"#{}"占位符中的参数属性以及替换占位符的核心
     ParameterMappingTokenHandler handler = new ParameterMappingTokenHandler(configuration, parameterType, additionalParameters);
+    //使用GenericTokenParser与ParameterMappingTokenHandler配合解析"#{}"
     GenericTokenParser parser = new GenericTokenParser("#{", "}", handler);
     String sql = parser.parse(originalSql);
+    //创建StaticSqlSource，其中封装了占位符被替换为"?"的SQL语句以及参数对应的parameterMappings集合
     return new StaticSqlSource(configuration, sql, handler.getParameterMappings());
   }
 
   private static class ParameterMappingTokenHandler extends BaseBuilder implements TokenHandler {
 
+    //用于记录解析得到的parameterMapping集合
     private List<ParameterMapping> parameterMappings = new ArrayList<ParameterMapping>();
-    private Class<?> parameterType;
+    private Class<?> parameterType;//参数类型
+    //DynamicContext.bindings集合中对应的MetaObject对象
     private MetaObject metaParameters;
 
     public ParameterMappingTokenHandler(Configuration configuration, Class<?> parameterType, Map<String, Object> additionalParameters) {
