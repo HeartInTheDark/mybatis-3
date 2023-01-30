@@ -71,16 +71,19 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
   private static final Object DEFERED = new Object();
 
+  //关联Executor、Configuration、MappedStatement、RowBounds对象
   private final Executor executor;
   private final Configuration configuration;
   private final MappedStatement mappedStatement;
   private final RowBounds rowBounds;
+
   private final ParameterHandler parameterHandler;
-  private final ResultHandler<?> resultHandler;
+
+  private final ResultHandler<?> resultHandler;//用户指定用于处理结果集的ResultHandler对象
   private final BoundSql boundSql;
   private final TypeHandlerRegistry typeHandlerRegistry;
-  private final ObjectFactory objectFactory;
-  private final ReflectorFactory reflectorFactory;
+  private final ObjectFactory objectFactory;//对象工厂
+  private final ReflectorFactory reflectorFactory; //反射工厂
 
   // nested resultmaps
   private final Map<CacheKey, Object> nestedResultObjects = new HashMap<CacheKey, Object>();
@@ -179,19 +182,25 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   //
   // HANDLE RESULT SETS
   //
+  //该方法不仅可以处理Statement、PreparedStatement、产生的结果集，还可以处理CallableStatement调用存储过程
+  //产生的多结果集
   @Override
   public List<Object> handleResultSets(Statement stmt) throws SQLException {
     ErrorContext.instance().activity("handling results").object(mappedStatement.getId());
-
+    //该集合用于保存映射结果集得到的结果对象
     final List<Object> multipleResults = new ArrayList<Object>();
 
     int resultSetCount = 0;
-    ResultSetWrapper rsw = getFirstResultSet(stmt);
+    ResultSetWrapper rsw = getFirstResultSet(stmt);//获取第一个ResultSet对象，存在多个，这里只获取第一个
 
+    //获取MappedStatement.resultMaps集合，MyBatis初始化过程中映射文件的<resultMap>节点会被解析成ResultMap对象，
+    //保存到MappedStatement.resultMaps集合中，如果SQL节点能够产生多个ResultSet，那么我们可以在SQL节点的resultMap
+    //集合中配置多个<resultMap>节点的id，它们通过","分隔，实现对多个结果集的映射
     List<ResultMap> resultMaps = mappedStatement.getResultMaps();
     int resultMapCount = resultMaps.size();
-    validateResultMapsCount(rsw, resultMapCount);
+    validateResultMapsCount(rsw, resultMapCount);//如果结集不为空，则resultMaps集合不能为空，否则抛出异常
     while (rsw != null && resultMapCount > resultSetCount) {
+      //获取该结果集对应的ResuleMap对象
       ResultMap resultMap = resultMaps.get(resultSetCount);
       handleResultSet(rsw, resultMap, multipleResults, null);
       rsw = getNextResultSet(stmt);
