@@ -1,17 +1,17 @@
 /**
- *    Copyright 2009-2017 the original author or authors.
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Copyright 2009-2017 the original author or authors.
+ * <p>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.ibatis.mapping;
 
@@ -35,42 +35,42 @@ import org.apache.ibatis.session.Configuration;
  */
 public class BoundSql {
 
-  private final String sql;
-  private final List<ParameterMapping> parameterMappings;
-  private final Object parameterObject;
-  private final Map<String, Object> additionalParameters;
-  private final MetaObject metaParameters;
+    private final String sql;//该字段记录了SQL语句，该SQL语句中可能含有"?"占位符
+    private final List<ParameterMapping> parameterMappings;//SQL中参数属性集合
+    private final Object parameterObject; //客户端执行SQL时传入的实际参数
+    private final Map<String, Object> additionalParameters; //空的HashMap集合，只会会复制DynamicContext.bindings集合中的内容
+    private final MetaObject metaParameters;//additionalParameters集合对应的MetaObject对象
 
-  public BoundSql(Configuration configuration, String sql, List<ParameterMapping> parameterMappings, Object parameterObject) {
-    this.sql = sql;
-    this.parameterMappings = parameterMappings;
-    this.parameterObject = parameterObject;
-    this.additionalParameters = new HashMap<String, Object>();
-    this.metaParameters = configuration.newMetaObject(additionalParameters);
-  }
+    public BoundSql(Configuration configuration, String sql, List<ParameterMapping> parameterMappings, Object parameterObject) {
+        this.sql = sql;
+        this.parameterMappings = parameterMappings;
+        this.parameterObject = parameterObject;
+        this.additionalParameters = new HashMap<String, Object>();
+        this.metaParameters = configuration.newMetaObject(additionalParameters);
+    }
 
-  public String getSql() {
-    return sql;
-  }
+    public String getSql() {
+        return sql;
+    }
 
-  public List<ParameterMapping> getParameterMappings() {
-    return parameterMappings;
-  }
+    public List<ParameterMapping> getParameterMappings() {
+        return parameterMappings;
+    }
 
-  public Object getParameterObject() {
-    return parameterObject;
-  }
+    public Object getParameterObject() {
+        return parameterObject;
+    }
 
-  public boolean hasAdditionalParameter(String name) {
-    String paramName = new PropertyTokenizer(name).getName();
-    return additionalParameters.containsKey(paramName);
-  }
+    public boolean hasAdditionalParameter(String name) {
+        String paramName = new PropertyTokenizer(name).getName();
+        return additionalParameters.containsKey(paramName);
+    }
 
-  public void setAdditionalParameter(String name, Object value) {
-    metaParameters.setValue(name, value);
-  }
+    public void setAdditionalParameter(String name, Object value) {
+        metaParameters.setValue(name, value);
+    }
 
-  public Object getAdditionalParameter(String name) {
-    return metaParameters.getValue(name);
-  }
+    public Object getAdditionalParameter(String name) {
+        return metaParameters.getValue(name);
+    }
 }
