@@ -23,6 +23,7 @@ import org.apache.ibatis.mapping.SqlSource;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 负责解析动态SQL，也是最常用的SqlSource实现之一，SqlNode中使用了组合模式，形成了树状结构
  * @author Clinton Begin
  */
 public class DynamicSqlSource implements SqlSource {
@@ -37,11 +38,17 @@ public class DynamicSqlSource implements SqlSource {
 
   @Override
   public BoundSql getBoundSql(Object parameterObject) {
+    //创建DynamicContext对象，parameterObject是用户传入的实参
     DynamicContext context = new DynamicContext(configuration, parameterObject);
+    //通过rootSqlNode.apply()方法调用整个树形结构中全部SqlNode.apply()方法
+    //每个SqlNode的apply()方法 都将解析得到的SQL语句片段追加到context中，最终通过context.getSql()方法得到完整SQL
     rootSqlNode.apply(context);
+    //创建SqlSourceBuilder，解析参数属性，并将SQL语句中的"#{}"占位符替换成"?"占位符
     SqlSourceBuilder sqlSourceParser = new SqlSourceBuilder(configuration);
     Class<?> parameterType = parameterObject == null ? Object.class : parameterObject.getClass();
     SqlSource sqlSource = sqlSourceParser.parse(context.getSql(), parameterType, context.getBindings());
+
+    //创建BoundSql对象，并将DynamicContext.bindings中的参数信息复制到其additionalParameters集合中
     BoundSql boundSql = sqlSource.getBoundSql(parameterObject);
     for (Map.Entry<String, Object> entry : context.getBindings().entrySet()) {
       boundSql.setAdditionalParameter(entry.getKey(), entry.getValue());
