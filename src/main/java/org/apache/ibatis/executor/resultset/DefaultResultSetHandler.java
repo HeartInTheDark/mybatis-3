@@ -376,11 +376,20 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
     private void handleRowValuesForSimpleResultMap(ResultSetWrapper rsw, ResultMap resultMap, ResultHandler<?> resultHandler, RowBounds rowBounds, ResultMapping parentMapping)
             throws SQLException {
+        //默认上下文对象
         DefaultResultContext<Object> resultContext = new DefaultResultContext<Object>();
+        //根据rowBounds中的 offset 值定位到指定的行记录
         skipRows(rsw.getResultSet(), rowBounds);
+        //检测已经处理的行数是否已经达到上限（RowBounds.limit）以及ResultSet中是否还有可处理的记录
         while (shouldProcessMoreRows(resultContext, rowBounds) && rsw.getResultSet().next()) {
+            //确定映射使用的ResultMap对象，
+            //根据该行记录以及ResultMap.discriminator，决定映射使用的ResultMap
             ResultMap discriminatedResultMap = resolveDiscriminatedResultMap(rsw.getResultSet(), resultMap, null);
+            //对ResultSet值的一行记录进行映射
+            //根据最终确定的ResultMap对ResultSet中的该行记录进行映射，得到映射后的结果对象
             Object rowValue = getRowValue(rsw, discriminatedResultMap);
+            //保存映射得到的结果集
+            //将映射结果对象添加到ResultHandler.resultList中
             storeObject(resultHandler, resultContext, rowValue, parentMapping, rsw.getResultSet());
         }
     }
@@ -421,13 +430,17 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
     private Object getRowValue(ResultSetWrapper rsw, ResultMap resultMap) throws SQLException {
         final ResultLoaderMap lazyLoader = new ResultLoaderMap();
+        //创建映射后的结果对象
         Object rowValue = createResultObject(rsw, resultMap, lazyLoader, null);
         if (rowValue != null && !hasTypeHandlerForResultObject(rsw, resultMap.getType())) {
             final MetaObject metaObject = configuration.newMetaObject(rowValue);
             boolean foundValues = this.useConstructorMappings;
+            //判断是否要开启自动映射功能
             if (shouldApplyAutomaticMappings(resultMap, false)) {
+                //自动映射ResultMap中未明确映射的列
                 foundValues = applyAutomaticMappings(rsw, resultMap, metaObject, null) || foundValues;
             }
+            //映射ResultMap中明确映射的列，到这里该记录的数据已经完全映射到结果对象的相应属性中
             foundValues = applyPropertyMappings(rsw, resultMap, metaObject, lazyLoader, null) || foundValues;
             foundValues = lazyLoader.size() > 0 || foundValues;
             rowValue = foundValues || configuration.isReturnInstanceForEmptyRow() ? rowValue : null;
