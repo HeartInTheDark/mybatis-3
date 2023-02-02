@@ -311,22 +311,28 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         }
     }
 
+    //该方法核心功能是完成对单个ResultSet的映射
     private void handleResultSet(ResultSetWrapper rsw, ResultMap resultMap, List<Object> multipleResults, ResultMapping parentMapping) throws SQLException {
         try {
             if (parentMapping != null) {
+                //处理多集合嵌套映射
                 handleRowValues(rsw, resultMap, null, RowBounds.DEFAULT, parentMapping);
             } else {
                 if (resultHandler == null) {
+                    //如果用户未指定处理结果的ResultHandler对象，则使用DefaultResultHandler作为默认的ResultHandler对象
                     DefaultResultHandler defaultResultHandler = new DefaultResultHandler(objectFactory);
+                    //对ResultSet进行映射，并将映射到的结果对象添加到DefaultResultHandler对象中暂存
                     handleRowValues(rsw, resultMap, defaultResultHandler, rowBounds, null);
+                    //将DefaultResultHandler中保存的对象添加到multipleResults集合中
                     multipleResults.add(defaultResultHandler.getResultList());
                 } else {
+                    //使用用户指定的ResultHandler对象处理结果对象
                     handleRowValues(rsw, resultMap, resultHandler, rowBounds, null);
                 }
             }
         } finally {
             // issue #228 (close resultsets)
-            closeResultSet(rsw.getResultSet());
+            closeResultSet(rsw.getResultSet());//关闭结果集
         }
     }
 
@@ -339,12 +345,16 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     // HANDLE ROWS FOR SIMPLE RESULTMAP
     //
 
+    //映射结果集的核心代码，其中有两个分支：一个是针对包含嵌套映射处理，一个是针对不含嵌套映射的简单映射处理
     public void handleRowValues(ResultSetWrapper rsw, ResultMap resultMap, ResultHandler<?> resultHandler, RowBounds rowBounds, ResultMapping parentMapping) throws SQLException {
         if (resultMap.hasNestedResultMaps()) {
+            //检测是否允许在嵌套映射中使用RowBounds
             ensureNoRowBounds();
+            //检测是否允许在嵌套映射中使用用户自定义的ResultHandler
             checkResultHandler();
             handleRowValuesForNestedResultMap(rsw, resultMap, resultHandler, rowBounds, parentMapping);
         } else {
+            //针对不含嵌套映射的简单处理
             handleRowValuesForSimpleResultMap(rsw, resultMap, resultHandler, rowBounds, parentMapping);
         }
     }
