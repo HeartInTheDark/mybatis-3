@@ -141,25 +141,31 @@ public class ResultSetWrapper {
     }
 
     private void loadMappedAndUnmappedColumnNames(ResultMap resultMap, String columnPrefix) throws SQLException {
+        //以下两个集合分别记录了ResultMap中映射和未映射的列名
         List<String> mappedColumnNames = new ArrayList<String>();
         List<String> unmappedColumnNames = new ArrayList<String>();
+        //列名前缀改为大写
         final String upperColumnPrefix = columnPrefix == null ? null : columnPrefix.toUpperCase(Locale.ENGLISH);
+        //ResultMap中定义的列名加上前缀，得到实际映射的列名
         final Set<String> mappedColumns = prependPrefixes(resultMap.getMappedColumns(), upperColumnPrefix);
         for (String columnName : columnNames) {
             final String upperColumnName = columnName.toUpperCase(Locale.ENGLISH);
             if (mappedColumns.contains(upperColumnName)) {
-                mappedColumnNames.add(upperColumnName);
+                mappedColumnNames.add(upperColumnName);//记录映射的列名
             } else {
-                unmappedColumnNames.add(columnName);
+                unmappedColumnNames.add(columnName);//记录未映射的列名
             }
         }
+        //将ResultMap的Id和列前缀组成key，将ResultMap映射的列名以及未映射的列名保存到以下两个集合中
         mappedColumnNamesMap.put(getMapKey(resultMap, columnPrefix), mappedColumnNames);
         unMappedColumnNamesMap.put(getMapKey(resultMap, columnPrefix), unmappedColumnNames);
     }
 
     public List<String> getMappedColumnNames(ResultMap resultMap, String columnPrefix) throws SQLException {
+        //在mappedColumnNamesMap集合中查找被映射的列名，其中key是有ResultMap的id与前缀组成
         List<String> mappedColumnNames = mappedColumnNamesMap.get(getMapKey(resultMap, columnPrefix));
         if (mappedColumnNames == null) {
+            //未查找到指定ResultMap映射的列名，则加载后存入mappedColumnNamesMap集合
             loadMappedAndUnmappedColumnNames(resultMap, columnPrefix);
             mappedColumnNames = mappedColumnNamesMap.get(getMapKey(resultMap, columnPrefix));
         }
