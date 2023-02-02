@@ -23,6 +23,7 @@ import java.lang.annotation.Target;
 
 /**
  * @author Clinton Begin
+ * 根据实体类的构造方法参数构造对象，具体使用方法可学习该篇博客。https://blog.csdn.net/weixin_43866295/article/details/86594161
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

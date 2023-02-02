@@ -23,6 +23,9 @@ import java.lang.annotation.Target;
 
 /**
  * @author Jeff Butler
+ *
+ * 当数据库字段名与实体类对应的属性名不一致时，可以使用@Results映射来将其对应起来
+ * 其他用法参考：https://blog.csdn.net/cristianoxm/article/details/126085063
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

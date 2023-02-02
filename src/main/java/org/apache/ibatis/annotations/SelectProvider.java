@@ -23,6 +23,8 @@ import java.lang.annotation.Target;
 
 /**
  * @author Clinton Begin
+ *
+ * 提供select的代码实现
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

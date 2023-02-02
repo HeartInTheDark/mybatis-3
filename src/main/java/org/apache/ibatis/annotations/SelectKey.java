@@ -25,6 +25,9 @@ import org.apache.ibatis.mapping.StatementType;
 
 /**
  * @author Clinton Begin
+ *
+ * 返回非自增主键
+ * 如果我们数据库中的主键不是自增方式产生的，但是当我们插入新数据后，需要返回该条数据的主键
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

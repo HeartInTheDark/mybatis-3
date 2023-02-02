@@ -23,6 +23,8 @@ import java.lang.annotation.Target;
 
 /**
  * @author Clinton Begin
+ * 该注解用于返回Map格式的数据集合
+ *
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

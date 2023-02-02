@@ -26,6 +26,8 @@ import org.apache.ibatis.mapping.StatementType;
 
 /**
  * @author Clinton Begin
+ *
+ * 操作可选项
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

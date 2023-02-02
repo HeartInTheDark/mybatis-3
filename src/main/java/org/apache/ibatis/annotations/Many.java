@@ -24,6 +24,8 @@ import org.apache.ibatis.mapping.FetchType;
 
 /**
  * @author Clinton Begin
+ * 字段为一对多映射
+ *
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

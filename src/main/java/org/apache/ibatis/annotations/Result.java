@@ -26,6 +26,8 @@ import org.apache.ibatis.type.UnknownTypeHandler;
 
 /**
  * @author Clinton Begin
+ *
+ * 字段映射
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

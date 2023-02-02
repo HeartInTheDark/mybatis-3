@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 
 /**
  * The marker annotation that indicate a constructor for automatic mapping.
- *
+ * 为框架指定实体类的默认构造方法
  * @author Tim Chen
  * @since 3.4.3
  */

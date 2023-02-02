@@ -28,6 +28,11 @@ import java.lang.annotation.Target;
  * </p>
  * @author Clinton Begin
  * @author Kazuki Shimizu
+ *
+ * 使用一个现有的缓存空间
+ * 对应的xml配置为<cache-ref />
+ * 例如：
+ *  @CacheNamespaceRef(value = PersonMapper.class, name = "org.apache.ibatis.submitted.cache.PersonMapper")
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

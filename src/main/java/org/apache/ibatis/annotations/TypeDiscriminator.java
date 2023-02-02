@@ -27,6 +27,8 @@ import org.apache.ibatis.type.UnknownTypeHandler;
 
 /**
  * @author Clinton Begin
+ *
+ * 据case的鉴别条件返回指定的结果集映射
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

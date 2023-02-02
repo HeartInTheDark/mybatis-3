@@ -23,6 +23,8 @@ import java.lang.annotation.Target;
 
 /**
  * @author Clinton Begin
+ * 统一结果处理返回
+ *
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

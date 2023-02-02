@@ -27,6 +27,9 @@ import org.apache.ibatis.cache.impl.PerpetualCache;
 /**
  * @author Clinton Begin
  * @author Kazuki Shimizu
+ *
+ * 配置一个缓存空间，对应xml配置为<cache />
+ * Property属性用以给缓存中添加固定的数据
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -46,6 +49,7 @@ public @interface CacheNamespace {
 
   /**
    * Property values for a implementation object.
+   * 实现对象的属性值。
    * @since 3.4.2
    */
   Property[] properties() default {};

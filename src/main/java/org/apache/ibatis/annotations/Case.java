@@ -22,6 +22,8 @@ import java.lang.annotation.Target;
 
 /**
  * @author Clinton Begin
+ *
+ * 鉴别条件
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

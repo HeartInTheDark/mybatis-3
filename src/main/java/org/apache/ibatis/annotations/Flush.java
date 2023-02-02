@@ -24,6 +24,7 @@ import java.lang.annotation.Target;
 /**
  * The maker annotation that invoke a flush statements via Mapper interface.
  *
+ * 定义在 Mapper 接口中的方法能够调用SqlSession#flushStatements() 方法。
  * @since 3.3.0
  * @author Kazuki Shimizu
  */

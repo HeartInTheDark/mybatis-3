@@ -27,8 +27,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Marker interface for MyBatis mappers
- * 
+ * Marker interface for MyBatis mappers   MyBatis映射器的标记接口
+ *
+ * 标记这是个 Mapper 的注解,在mybatis源码中并未进行使用，估计为配合mybatis-spring的mapperscan生成bean而存在(猜测)
  * @author Frank David Martínez
  */
 @Documented
