@@ -91,6 +91,9 @@ public class ResultSetWrapper {
      * Tries to get from the TypeHandlerRegistry by searching for the property type.
      * If not found it gets the column JDBC type and tries to get a handler for it.
      *
+     * 获取读取结果集时要使用的类型处理程序。尝试通过搜索属性类型从TypeHandlerRegistry获取。
+     * 如果没有找到，它将获取列JDBC类型并尝试获取该列的处理程序。
+     *
      * @param propertyType
      * @param columnName
      * @return
