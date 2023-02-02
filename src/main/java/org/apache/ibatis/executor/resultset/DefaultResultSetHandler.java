@@ -396,15 +396,20 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
     private void storeObject(ResultHandler<?> resultHandler, DefaultResultContext<Object> resultContext, Object rowValue, ResultMapping parentMapping, ResultSet rs) throws SQLException {
         if (parentMapping != null) {
+            //嵌套查询或嵌套映射，将结果对象保存到父对象对象的属性中
             linkToParents(rs, parentMapping, rowValue);
         } else {
+            //普通映射，将结果对象保存到ResultHandler中
             callResultHandler(resultHandler, resultContext, rowValue);
         }
     }
 
     @SuppressWarnings("unchecked" /* because ResultHandler<?> is always ResultHandler<Object>*/)
     private void callResultHandler(ResultHandler<?> resultHandler, DefaultResultContext<Object> resultContext, Object rowValue) {
+        //递增DefaultResultContext.resultCount，该值用于检测处理的记录行数是否达到上限（RowBounds.limit）
+        //之后会将结果对象保存到DefaultResultContext.resultObject字段中
         resultContext.nextResultObject(rowValue);
+        //将结果对象添加到ResultHandler.resultList中保存
         ((ResultHandler<Object>) resultHandler).handleResult(resultContext);
     }
 
@@ -473,22 +478,33 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         //获取该ResultMap中明确需要进行映射的列名集合
         final List<String> mappedColumnNames = rsw.getMappedColumnNames(resultMap, columnPrefix);
         boolean foundValues = false;
+        //获取ResultMap.propertyResultMappings集合，其中记录了映射使用的所有ResultMapping对象
         final List<ResultMapping> propertyMappings = resultMap.getPropertyResultMappings();
         for (ResultMapping propertyMapping : propertyMappings) {
+            //处理前缀
             String column = prependPrefix(propertyMapping.getColumn(), columnPrefix);
             if (propertyMapping.getNestedResultMapId() != null) {
                 // the user added a column attribute to a nested result map, ignore it
+                //该属性需要使用一个嵌套的ResultMap进行映射，忽略column属性
                 column = null;
             }
-            if (propertyMapping.isCompositeResult()
-                    || (column != null && mappedColumnNames.contains(column.toUpperCase(Locale.ENGLISH)))
-                    || propertyMapping.getResultSet() != null) {
+
+            //下面的逻辑主要处理三种场景
+            //场景一：column是"{prop1=col1,prop2=col2}"这种形式，一般与嵌套查询配合使用，表示将col1和col2的列值传给内层嵌套查询作为参数
+            //场景二：基本类型的属性映射
+            //场景三：多结果集的场景处理，该属性来自另一个结果集
+            if (propertyMapping.isCompositeResult()//场景一
+                    || (column != null && mappedColumnNames.contains(column.toUpperCase(Locale.ENGLISH)))//场景二
+                    || propertyMapping.getResultSet() != null) //场景三
+            {
+                //通过getPropertyMappingValue()方法完成映射，并得到属性值
                 Object value = getPropertyMappingValue(rsw.getResultSet(), metaObject, propertyMapping, lazyLoader, columnPrefix);
                 // issue #541 make property optional
-                final String property = propertyMapping.getProperty();
+                final String property = propertyMapping.getProperty();//获取属性名
                 if (property == null) {
                     continue;
                 } else if (value == DEFERED) {
+                    //DEFERED 表示占位符对象
                     foundValues = true;
                     continue;
                 }
@@ -506,14 +522,16 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
     private Object getPropertyMappingValue(ResultSet rs, MetaObject metaResultObject, ResultMapping propertyMapping, ResultLoaderMap lazyLoader, String columnPrefix)
             throws SQLException {
-        if (propertyMapping.getNestedQueryId() != null) {
+        if (propertyMapping.getNestedQueryId() != null) {//嵌套查询
             return getNestedQueryMappingValue(rs, metaResultObject, propertyMapping, lazyLoader, columnPrefix);
-        } else if (propertyMapping.getResultSet() != null) {
+        } else if (propertyMapping.getResultSet() != null) {//多结果集处理
             addPendingChildRelation(rs, metaResultObject, propertyMapping);   // TODO is that OK?
             return DEFERED;
         } else {
+            //获取ResultMapping中记录的TypeHandler对象
             final TypeHandler<?> typeHandler = propertyMapping.getTypeHandler();
             final String column = prependPrefix(propertyMapping.getColumn(), columnPrefix);
+            //使用TypeHandler对象获取属性值
             return typeHandler.getResult(rs, column);
         }
     }
