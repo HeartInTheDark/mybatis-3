@@ -1130,19 +1130,25 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     //
 
     private CacheKey createRowKey(ResultMap resultMap, ResultSetWrapper rsw, String columnPrefix) throws SQLException {
+        //创建CacheKey对象
         final CacheKey cacheKey = new CacheKey();
-        cacheKey.update(resultMap.getId());
+        cacheKey.update(resultMap.getId());//将ResultMap的id作为CacheKey的一部分
+        //查找ResultMapping集合
         List<ResultMapping> resultMappings = getResultMappingsForRowKey(resultMap);
-        if (resultMappings.isEmpty()) {
+        if (resultMappings.isEmpty()) {//没有找到任何ResultMapping
             if (Map.class.isAssignableFrom(resultMap.getType())) {
+                //由结果集中的所有列名以及当前记录行的所有值一起构成CacheKey对象
                 createRowKeyForMap(rsw, cacheKey);
             } else {
+                //由结果集未映射的列名以及他们在当前行中对应的列值一起组成CacheKey对象
                 createRowKeyForUnmappedProperties(resultMap, rsw, cacheKey, columnPrefix);
             }
         } else {
+            //由resultMappings集合中的列名以及他们在当前记录行中的列值一起构成CacheKey
             createRowKeyForMappedProperties(resultMap, rsw, cacheKey, resultMappings, columnPrefix);
         }
         if (cacheKey.getUpdateCount() < 2) {
+            //没有找到任何列参与构成CacheKey对象，则返回NullCacheKey对象
             return CacheKey.NULL_CACHE_KEY;
         }
         return cacheKey;
