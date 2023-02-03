@@ -142,15 +142,21 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
     @Override
     public void handleOutputParameters(CallableStatement cs) throws SQLException {
+        //获取用户传入的实际参数，并为其创建相应的MetaObject对象
         final Object parameterObject = parameterHandler.getParameterObject();
         final MetaObject metaParam = configuration.newMetaObject(parameterObject);
+        //获取BoundSql,parameterMappings集合，其中记录了参数相关信息
         final List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
-        for (int i = 0; i < parameterMappings.size(); i++) {
+        for (int i = 0; i < parameterMappings.size(); i++) {//遍历所有参数信息
             final ParameterMapping parameterMapping = parameterMappings.get(i);
             if (parameterMapping.getMode() == ParameterMode.OUT || parameterMapping.getMode() == ParameterMode.INOUT) {
+
+                ///如果存在输出类型的参数，则解析参数值，并设置到parameterObject中
                 if (ResultSet.class.equals(parameterMapping.getJavaType())) {
+                    //如果指定该输出参数为ResultSet类型，则需要进行映射
                     handleRefCursorOutputParameter((ResultSet) cs.getObject(i + 1), parameterMapping, metaParam);
                 } else {
+                    //使用TypeHandler获取参数值，并设置到parameterObject中
                     final TypeHandler<?> typeHandler = parameterMapping.getTypeHandler();
                     metaParam.setValue(parameterMapping.getProperty(), typeHandler.getResult(cs, i + 1));
                 }
@@ -158,17 +164,22 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         }
     }
 
+    //负责处理ResultSet类型的输出参数，它会按照指定的ResultMap对该ResultSet类型的输出参数进行映射，
+    // 并将映射得到的结果对象设置到用户传入的parameterObject对象中
     private void handleRefCursorOutputParameter(ResultSet rs, ParameterMapping parameterMapping, MetaObject metaParam) throws SQLException {
         if (rs == null) {
             return;
         }
         try {
+            //获取映射使用的ResultMap对象
             final String resultMapId = parameterMapping.getResultMapId();
             final ResultMap resultMap = configuration.getResultMap(resultMapId);
             final ResultSetWrapper rsw = new ResultSetWrapper(rs, configuration);
             if (this.resultHandler == null) {
+                //创建用于保存映射结果对象的DefaultResultHandler对象
                 final DefaultResultHandler resultHandler = new DefaultResultHandler(objectFactory);
                 handleRowValues(rsw, resultMap, resultHandler, new RowBounds(), null);
+                //将映射得到的结果对象保存到parameterObject中
                 metaParam.setValue(parameterMapping.getProperty(), resultHandler.getResultList());
             } else {
                 handleRowValues(rsw, resultMap, resultHandler, new RowBounds(), null);
