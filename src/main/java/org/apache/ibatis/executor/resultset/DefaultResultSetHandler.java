@@ -871,25 +871,35 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
     private Object getNestedQueryMappingValue(ResultSet rs, MetaObject metaResultObject, ResultMapping propertyMapping, ResultLoaderMap lazyLoader, String columnPrefix)
             throws SQLException {
+        //获取嵌套查询的id和对应的MappedStatement对象
         final String nestedQueryId = propertyMapping.getNestedQueryId();
         final String property = propertyMapping.getProperty();
         final MappedStatement nestedQuery = configuration.getMappedStatement(nestedQueryId);
+
+        //获取传递给嵌套查询的参数类型和参数值
         final Class<?> nestedQueryParameterType = nestedQuery.getParameterMap().getType();
         final Object nestedQueryParameterObject = prepareParameterForNestedQuery(rs, propertyMapping, nestedQueryParameterType, columnPrefix);
         Object value = null;
         if (nestedQueryParameterObject != null) {
+            //获取嵌套查询对应的BoundSql对象和相应CacheKey对象
             final BoundSql nestedBoundSql = nestedQuery.getBoundSql(nestedQueryParameterObject);
             final CacheKey key = executor.createCacheKey(nestedQuery, nestedQueryParameterObject, RowBounds.DEFAULT, nestedBoundSql);
+            //获取嵌套查询结果集经过映射后的目标类型
             final Class<?> targetType = propertyMapping.getJavaType();
+            //检测缓存池中是否存在该嵌套查询的结果对象
             if (executor.isCached(nestedQuery, key)) {
+                //创建 DeferredLoad 对象，并通过DeferredLoad从缓存中加载结果对象
                 executor.deferLoad(nestedQuery, metaResultObject, property, key, targetType);
-                value = DEFERED;
+                value = DEFERED; //返回DEFERED标识（一个特殊的标识对象）
             } else {
+                //创建嵌套查询相应的ResultLoader对象
                 final ResultLoader resultLoader = new ResultLoader(configuration, executor, nestedQuery, nestedQueryParameterObject, targetType, key, nestedBoundSql);
                 if (propertyMapping.isLazy()) {
+                    //如果该属性配置了延迟加载，则将其添加到ResultMap中，等待真正使用时再执行嵌套查询并得到结果对象
                     lazyLoader.addLoader(property, metaResultObject, resultLoader);
                     value = DEFERED;
                 } else {
+                    //没有配置延迟加载，则直接调用ResultLoader.loadResult()方法执行嵌套查询，并映射得到结果对象
                     value = resultLoader.loadResult();
                 }
             }
