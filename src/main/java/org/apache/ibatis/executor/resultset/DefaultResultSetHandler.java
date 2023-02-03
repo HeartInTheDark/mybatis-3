@@ -682,6 +682,8 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         if (resultObject != null && !hasTypeHandlerForResultObject(rsw, resultMap.getType())) {
             final List<ResultMapping> propertyMappings = resultMap.getPropertyResultMappings();
             for (ResultMapping propertyMapping : propertyMappings) {
+                //如果存在嵌套查询且该属性为延迟加载的属性，则使用ProxyFactory创建代理对象，
+                //默认使用的是JavassistProxyFactory
                 // issue gcode #109 && issue #149
                 if (propertyMapping.getNestedQueryId() != null && propertyMapping.isLazy()) {
                     resultObject = configuration.getProxyFactory().createProxy(resultObject, lazyLoader, configuration, objectFactory, constructorArgTypes, constructorArgs);
