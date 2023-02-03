@@ -1,17 +1,17 @@
 /**
- *    Copyright 2009-2017 the original author or authors.
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Copyright 2009-2017 the original author or authors.
+ * <p>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.ibatis.cursor.defaults;
 
@@ -38,17 +38,22 @@ import java.util.NoSuchElementException;
 public class DefaultCursor<T> implements Cursor<T> {
 
     // ResultSetHandler stuff
+    //用于完成映射的DefaultResultSetHandler对象
     private final DefaultResultSetHandler resultSetHandler;
-    private final ResultMap resultMap;
-    private final ResultSetWrapper rsw;
-    private final RowBounds rowBounds;
+    private final ResultMap resultMap; //映射使用的ResultMap对象
+    private final ResultSetWrapper rsw;//其中封装了结果集的相关元信息
+    private final RowBounds rowBounds;//指定了对结果集进行映射的起始位置
+
+    //ObjectWrapperResultHandler继承了ResultHandler接口，与前面介绍的DefaultResultHandler
+    //类似，用于暂存映射的结果对象
     private final ObjectWrapperResultHandler<T> objectWrapperResultHandler = new ObjectWrapperResultHandler<T>();
 
+    //通过迭代器获取映射得到的结果对象
     private final CursorIterator cursorIterator = new CursorIterator();
-    private boolean iteratorRetrieved;
+    private boolean iteratorRetrieved;//标识是否正在迭代结果集
 
     private CursorStatus status = CursorStatus.CREATED;
-    private int indexWithRowBound = -1;
+    private int indexWithRowBound = -1; //记录已经完成映射的行数
 
     private enum CursorStatus {
 
@@ -124,7 +129,9 @@ public class DefaultCursor<T> implements Cursor<T> {
     }
 
     protected T fetchNextUsingRowBound() {
+        //映射一行数据库记录，得到结果对象
         T result = fetchNextObjectFromDatabase();
+        //从结果集开始一条一条记录映射，但是将rowBounds.offset之前的映射结果全部忽略
         while (result != null && indexWithRowBound < rowBounds.getOffset()) {
             result = fetchNextObjectFromDatabase();
         }
@@ -132,21 +139,26 @@ public class DefaultCursor<T> implements Cursor<T> {
     }
 
     protected T fetchNextObjectFromDatabase() {
+        //检测当前游标是否关闭
         if (isClosed()) {
             return null;
         }
 
         try {
+            //更新游标状态
             status = CursorStatus.OPEN;
+            // 通过DefaultResultSetHandler.handleRowValues()方法完成映射，
+            // 这里会将映射得到的结果对象保存到ObjectWrapperResultHandler.result字段中
             resultSetHandler.handleRowValues(rsw, resultMap, objectWrapperResultHandler, RowBounds.DEFAULT, null);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
 
-        T next = objectWrapperResultHandler.result;
+        T next = objectWrapperResultHandler.result; //获取结果对象
         if (next != null) {
-            indexWithRowBound++;
+            indexWithRowBound++; //统计返回的结果对象数量
         }
+        //检测是否还存在需要被映射的记录，如果没有，则关闭游标并修改状态
         // No more object or limit reached
         if (next == null || getReadItemsCount() == rowBounds.getOffset() + rowBounds.getLimit()) {
             close();
@@ -154,7 +166,7 @@ public class DefaultCursor<T> implements Cursor<T> {
         }
         objectWrapperResultHandler.result = null;
 
-        return next;
+        return next;//返回结果对象
     }
 
     private boolean isClosed() {
@@ -199,15 +211,16 @@ public class DefaultCursor<T> implements Cursor<T> {
         @Override
         public T next() {
             // Fill next with object fetched from hasNext()
+            //在hasNext()方法中也会调用fetchNextUsingRowBound()方法，并将映射结果对象记录到object字段中
             T next = object;
 
             if (next == null) {
-                next = fetchNextUsingRowBound();
+                next = fetchNextUsingRowBound();//对结果集进行映射的核心
             }
 
             if (next != null) {
                 object = null;
-                iteratorIndex++;
+                iteratorIndex++; //记录返回结果对象的个数
                 return next;
             }
             throw new NoSuchElementException();
