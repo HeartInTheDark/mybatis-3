@@ -88,6 +88,9 @@ public abstract class BaseExecutor implements Executor {
         return transaction;
     }
 
+    /**
+     *BaseExecutor.close（）方法首先会调用rollback（）方法忽略缓存的SQL语句，之后根据参数决定是否关闭底层的数据库连接
+     */
     @Override
     public void close(boolean forceRollback) {
         try {
@@ -134,6 +137,8 @@ public abstract class BaseExecutor implements Executor {
         return doUpdate(ms, parameter);
     }
 
+    //Executor.flushStatements（）方法主要是针对批处理多条SQL语句的，它会调用doFlushStatements（）这个基本方法处理Executor
+    // 中缓存的多条SQL 语句。在BaseExecutor.commit（）、rollback（）等方法中都会首先调用flushStatements（）方法，然后再执行相关事务操作
     @Override
     public List<BatchResult> flushStatements() throws SQLException {
         return flushStatements(false);
@@ -143,6 +148,8 @@ public abstract class BaseExecutor implements Executor {
         if (closed) {
             throw new ExecutorException("Executor was closed.");
         }
+        //调用doFlushStatements()这个基本方法，其参数isRollBack表示是否执行Executor中缓存的
+        //SQL语句，false表示执行，true表示不执行
         return doFlushStatements(isRollBack);
     }
 
@@ -276,18 +283,24 @@ public abstract class BaseExecutor implements Executor {
         return localCache.getObject(key) != null;//检测缓存中是否缓存了CacheKey对应的对象
     }
 
+    //BaseExecutor.commit（）方法首先会清空一级缓存、调用flushStatements（）方法，最后才根据参数决定是否真正提交事务
     @Override
     public void commit(boolean required) throws SQLException {
         if (closed) {
             throw new ExecutorException("Cannot commit, transaction is already closed");
         }
-        clearLocalCache();
-        flushStatements();
-        if (required) {
+        clearLocalCache();//清空一级缓存
+        flushStatements();//执行缓存的SQL语句，其中调用了f1 ushStatements(false)方法
+        if (required) {//根据required参数决定是否提交事务
             transaction.commit();
         }
     }
 
+    /**
+     *BaseExecutor.rollback（）方法的实现与commit（）实现类似，同样会根据参数决定是否真正回滚事务，
+     * 区别是其中调用的是flushStatements（）方法的isRollBack参数为true，这就会导致Executor中缓
+     * 存的SQL语句全部被忽略（不会被发送到数据库执行）
+     */
     @Override
     public void rollback(boolean required) throws SQLException {
         if (!closed) {
