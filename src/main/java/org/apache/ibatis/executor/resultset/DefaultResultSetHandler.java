@@ -720,6 +720,10 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         throw new ExecutorException("Do not know how to create an instance of " + resultType);
     }
 
+    /**
+     * 该方法会获取＜resultMap＞中配置的构造函数的参数类型和参数值，并选择合适的构造函数创建映射的结果对象。
+     * 如果其中某个构造参数值是通过嵌套查询获取的，则需要通过getNestedQueryConstructorValue（）方法创建该参数值
+     */
     Object createParameterizedResultObject(ResultSetWrapper rsw, Class<?> resultType, List<ResultMapping> constructorMappings,
                                            List<Class<?>> constructorArgTypes, List<Object> constructorArgs, String columnPrefix) {
         boolean foundValues = false;
@@ -837,16 +841,28 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     // NESTED QUERY
     //
 
+    /**
+     * 通过以下方法分析可知，在创建构造函数的参数时涉及的嵌套查询，无论配置如何，都不会延迟加载，
+     * 在后面介绍其他属性的嵌套查询中，才会有延迟加载的处理逻辑。
+     */
+
     private Object getNestedQueryConstructorValue(ResultSet rs, ResultMapping constructorMapping, String columnPrefix) throws SQLException {
+        //获取嵌套查询的id以及对应的MappedStatement对象
         final String nestedQueryId = constructorMapping.getNestedQueryId();
         final MappedStatement nestedQuery = configuration.getMappedStatement(nestedQueryId);
         final Class<?> nestedQueryParameterType = nestedQuery.getParameterMap().getType();
+        //获取传递给嵌套查询的参数值
         final Object nestedQueryParameterObject = prepareParameterForNestedQuery(rs, constructorMapping, nestedQueryParameterType, columnPrefix);
         Object value = null;
         if (nestedQueryParameterObject != null) {
+            //获取嵌套查询对应的BoundSql对象和相应的CacheKey对象
             final BoundSql nestedBoundSql = nestedQuery.getBoundSql(nestedQueryParameterObject);
             final CacheKey key = executor.createCacheKey(nestedQuery, nestedQueryParameterObject, RowBounds.DEFAULT, nestedBoundSql);
+
+            //获取嵌套查询结果集经过映射后的目标类型
             final Class<?> targetType = constructorMapping.getJavaType();
+
+            //创建ResultLoader对象，并调用loadResult()方法执行嵌套查询，得到相应的构造方法参数值
             final ResultLoader resultLoader = new ResultLoader(configuration, executor, nestedQuery, nestedQueryParameterObject, targetType, key, nestedBoundSql);
             value = resultLoader.loadResult();
         }
