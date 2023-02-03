@@ -44,6 +44,8 @@ public interface Executor {
 
     <E> Cursor<E> queryCursor(MappedStatement ms, Object parameter, RowBounds rowBounds) throws SQLException;
 
+    //Executor.flushStatements（）方法主要是针对批处理多条SQL语句的，它会调用doFlushStatements（）这个基本方法处理Executor
+    // 中缓存的多条SQL 语句。在BaseExecutor.commit（）、rollback（）等方法中都会首先调用flushStatements（）方法，然后再执行相关事务操作
     List<BatchResult> flushStatements() throws SQLException;//批量执行SQL语句
 
     void commit(boolean required) throws SQLException; //提交事务
