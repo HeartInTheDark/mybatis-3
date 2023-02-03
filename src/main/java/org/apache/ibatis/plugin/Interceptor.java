@@ -24,6 +24,8 @@ import java.util.Properties;
  */
 public interface Interceptor {
 
+    //Interceptor.intercept（）方法的参数是Invocation对象，其中封装了目标对象、
+    // 目标方法以及调用目标方法的参数，并提供了proceed（）方法调用目标方法
     Object intercept(Invocation invocation) throws Throwable;//执行拦截逻辑的方法
 
     Object plugin(Object target);//决定是否触发intercept()方法
