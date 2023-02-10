@@ -20,6 +20,7 @@ import java.util.List;
 
 /**
  * 用于管理 PooledConnection 对象状态的组件，通过两个List集合分别管理空闲状态和活跃状态的连接
+ *
  * @author Clinton Begin
  */
 public class PoolState {

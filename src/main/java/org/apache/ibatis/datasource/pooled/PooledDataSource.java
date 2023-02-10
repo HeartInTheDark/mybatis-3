@@ -42,26 +42,17 @@ public class PooledDataSource implements DataSource {
     private static final Log log = LogFactory.getLog(PooledDataSource.class);
 
     private final PoolState state = new PoolState(this);//通过PoolState管理连接池的状态并记录统计信息
-
-    //记录UnpooledDataSource对象 用于生成真是的数据库连接对象，构造函数中会初始化该字段
-    private final UnpooledDataSource dataSource;
-
+    private final UnpooledDataSource dataSource;//记录UnpooledDataSource对象 用于生成真是的数据库连接对象，构造函数中会初始化该字段
     // OPTIONAL CONFIGURATION FIELDS
     protected int poolMaximumActiveConnections = 10; //最大活跃连接数
     protected int poolMaximumIdleConnections = 5;//最大空闲连接数
     protected int poolMaximumCheckoutTime = 20000;//最大checkout时长（表示应用从连接池取出连接到归还连接这段时长）
     protected int poolTimeToWait = 20000;//在无法获取连接时，线程需要等待的时间
     protected int poolMaximumLocalBadConnectionTolerance = 3;//最大无效连接数
-
-    //在检测一个数据库连接是否可用时，会给数据库发送一个SQL语句
-    protected String poolPingQuery = "NO PING QUERY SET";
+    protected String poolPingQuery = "NO PING QUERY SET";//在检测一个数据库连接是否可用时，会给数据库发送一个SQL语句
     protected boolean poolPingEnabled;//是否允许发送测试SQL语句
-
-    //当连接超过poolPingConnectionsNotUsedFor毫秒未使用时，会发送一次测试SQL，检测连接是否正常
-    protected int poolPingConnectionsNotUsedFor;
-
-    //由数据库url、用户名和密码计算出来的hash值，可用于标识当前的连接池，在构造函数中初始化
-    private int expectedConnectionTypeCode;
+    protected int poolPingConnectionsNotUsedFor;//当连接超过poolPingConnectionsNotUsedFor毫秒未使用时，会发送一次测试SQL，检测连接是否正常
+    private int expectedConnectionTypeCode;//由数据库url、用户名和密码计算出来的hash值，可用于标识当前的连接池，在构造函数中初始化
 
     public PooledDataSource() {
         dataSource = new UnpooledDataSource();
